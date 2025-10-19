@@ -48,6 +48,7 @@
         user-select: none;
         pointer-events: none;
       }
+
       .text-particle {
         white-space: nowrap;
         text-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
@@ -263,12 +264,80 @@
           rotY = 0;
         let activePointerId = null;
 
+        // Maintain a quaternion representing the current orientation to avoid gimbal lock.
+        let orientation = { x: 0, y: 0, z: 0, w: 1 };
+        function quatMultiply(a, b) {
+          return {
+            w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+            x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+            y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+            z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
+          };
+        }
+        function quatNormalize(q) {
+          const len = Math.sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+          return { x: q.x / len, y: q.y / len, z: q.z / len, w: q.w / len };
+        }
+        function quatFromAxisAngle(axis, angle) {
+          const half = angle / 2;
+          const s = Math.sin(half);
+          return {
+            x: axis[0] * s,
+            y: axis[1] * s,
+            z: axis[2] * s,
+            w: Math.cos(half),
+          };
+        }
+        function quatToMatrix4(q) {
+          const x = q.x,
+            y = q.y,
+            z = q.z,
+            w = q.w;
+          const xx = x * x,
+            yy = y * y,
+            zz = z * z;
+          const xy = x * y,
+            xz = x * z,
+            yz = y * z;
+          const wx = w * x,
+            wy = w * y,
+            wz = w * z;
+          return [
+            1 - 2 * (yy + zz),
+            2 * (xy - wz),
+            2 * (xz + wy),
+            0,
+            2 * (xy + wz),
+            1 - 2 * (xx + zz),
+            2 * (yz - wx),
+            0,
+            2 * (xz - wy),
+            2 * (yz + wx),
+            1 - 2 * (xx + yy),
+            0,
+            0,
+            0,
+            0,
+            1,
+          ];
+        }
+
         function setRotation(dx, dy) {
-          rotY += dx * 0.3; // adjust sensitivity as needed
-          rotX -= dy * 0.3;
-          // Optional: clamp rotX to avoid flipping completely
-          rotX = Math.max(Math.min(rotX, 90), -90);
-          rotatingContainer.style.transform = `translate(-50%, -50%) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+          // Convert pixel movement into small rotation increments (radians).
+          const yaw = dx * 0.005; // rotation around Y-axis for horizontal drag
+          const pitch = -dy * 0.005; // rotation around X-axis for vertical drag
+          // Create quaternions representing the yaw and pitch rotations.
+          const qYaw = quatFromAxisAngle([0, 1, 0], yaw);
+          const qPitch = quatFromAxisAngle([1, 0, 0], pitch);
+          // Apply the incremental rotations to the current orientation.
+          orientation = quatMultiply(qYaw, orientation);
+          orientation = quatMultiply(qPitch, orientation);
+          orientation = quatNormalize(orientation);
+          // Convert orientation to a 4x4 rotation matrix and apply as a CSS transform.
+          const m = quatToMatrix4(orientation);
+          rotatingContainer.style.transform = `translate(-50%, -50%) matrix3d(${m.join(
+            ","
+          )})`;
         }
         function updateCursor(isActive) {
           rotatingContainer.style.cursor = isActive ? "grabbing" : "grab";
@@ -289,7 +358,11 @@
           activePointerId = null;
         }
         function onPointerDown(e) {
-          if (pointerDown) return;
+          // If the previous drag was not ended properly (e.g. missed pointerup), force
+          // ending the interaction so the next drag can start cleanly.
+          if (pointerDown) {
+            endInteraction();
+          }
           pointerDown = true;
           activePointerId = e.pointerId;
           lastX = e.clientX;
@@ -321,7 +394,10 @@
         window.addEventListener("pointermove", onPointerMove);
         window.addEventListener("pointerup", onPointerUp);
         window.addEventListener("pointercancel", onPointerCancel);
-        rotatingContainer.addEventListener("lostpointercapture", endInteraction);
+        rotatingContainer.addEventListener(
+          "lostpointercapture",
+          endInteraction
+        );
         // Prevent default dragging on images inside the container
         document.querySelectorAll("img").forEach((img) => {
           img.addEventListener("dragstart", (e) => e.preventDefault());
