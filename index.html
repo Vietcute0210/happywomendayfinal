@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="icon" href="img/flowers.png" type="image/x-icon" />
+    <title>Flowers</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Anonymous+Pro"
+      rel="stylesheet"
+      type="text/css"
+    />
+  </head>
+
+  <body>
+    <!-- Starry night background for the front page -->
+    <div id="nightStars" class="night-stars"></div>
+    <div class="greetings">
+      <!-- silahkan menambah kata sesuai keinginan dengan <span>text...</span -->
+
+      <span id="letter">Y</span>
+      <span id="letter">O</span>
+      <span id="letter">U</span>
+      <span id="letter">'</span>
+      <span id="letter">R</span>
+      <span>E</span>
+
+      <span style="margin-right: 20px"></span>
+      <span id="letter">M</span>
+      <span>Y</span>
+
+      <span style="margin-right: 4pt"></span>
+      <br class="mobile-break" />
+
+      <span id="letter">
+        <a
+          href=""
+          id="pp_letter"
+          class="typewrite"
+          data-period="2000"
+          data-type='[ "FLOWER", "SUNSHINE", "LOVE","QUEEN" ,"SWEET","INSPIRATION","JEWEL" ]'
+        >
+          <script>
+            var TxtType = function (el, toRotate, period) {
+              this.toRotate = toRotate;
+              this.el = el;
+              this.loopNum = 0;
+              this.period = parseInt(period, 10) || 2000;
+              this.txt = "";
+              this.tick();
+              this.isDeleting = false;
+            };
+
+            TxtType.prototype.tick = function () {
+              var i = this.loopNum % this.toRotate.length;
+              var fullTxt = this.toRotate[i];
+
+              if (this.isDeleting) {
+                this.txt = fullTxt.substring(0, this.txt.length - 1);
+              } else {
+                this.txt = fullTxt.substring(0, this.txt.length + 1);
+              }
+
+              this.el.innerHTML = '<span class="wrap">' + this.txt + "</span>";
+
+              var that = this;
+              var delta = 200 - Math.random() * 100;
+
+              if (this.isDeleting) {
+                delta /= 2;
+              }
+
+              if (!this.isDeleting && this.txt === fullTxt) {
+                delta = this.period;
+                this.isDeleting = true;
+              } else if (this.isDeleting && this.txt === "") {
+                this.isDeleting = false;
+                this.loopNum++;
+                delta = 500;
+              }
+
+              setTimeout(function () {
+                that.tick();
+              }, delta);
+            };
+
+            window.onload = function () {
+              var elements = document.getElementsByClassName("typewrite");
+              for (var i = 0; i < elements.length; i++) {
+                var toRotate = elements[i].getAttribute("data-type");
+                var period = elements[i].getAttribute("data-period");
+                if (toRotate) {
+                  new TxtType(elements[i], JSON.parse(toRotate), period);
+                }
+              }
+              // INJECT CSS
+              var css = document.createElement("style");
+              css.type = "text/css";
+              css.innerHTML =
+                ".typewrite > .wrap { border-right: 0.08em solid #fff}";
+              document.body.appendChild(css);
+            };
+          </script>
+          <span class="wrap"></span>
+        </a>
+      </span>
+      <!-- <span id="letter">F</span>
+        <span id="letter">L</span>
+        <span id="letter">O</span>
+        <span id="letter">W</span>
+        <span id="letter">E</span>
+        <span id="letter">R</span> -->
+    </div>
+    <!-- Background music for the landing page -->
+    <audio id="bgMusic" loop autoplay style="display: none">
+      <source src="/sound/HERMOSA.mp3" type="audio/mpeg" />
+    </audio>
+    <!-- Toggle button to control background music -->
+    <div
+      id="musicToggle"
+      aria-label="Toggle music"
+      style="
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        border-radius: 50%;
+        padding: 0.6rem;
+        font-size: 1.5rem;
+        cursor: pointer;
+        z-index: 1000;
+        user-select: none;
+      "
+    >
+      🔊
+    </div>
+    <script>
+      (function () {
+        const audio = document.getElementById("bgMusic");
+        const toggleBtn = document.getElementById("musicToggle");
+        function updateIcon() {
+          toggleBtn.textContent = audio.paused ? "🔇" : "🔊";
+        }
+        toggleBtn.addEventListener("click", function () {
+          if (audio.paused) {
+            audio.play().catch(() => {});
+          } else {
+            audio.pause();
+          }
+          updateIcon();
+        });
+        // initialize the icon based on autoplay state
+        updateIcon();
+      })();
+    </script>
+
+    <!-- Customization logic -->
+    <!-- Add version query to force reload when script updates -->
+    <!-- Bump version number to force the browser to load the latest script after updates -->
+    <!-- Bump version number to force the browser to load the latest script after updates -->
+    <!-- Bump version number to force reload when script updates -->
+    <!-- Bump version number to force the browser to load the latest script after updates -->
+    <script src="customize.js?v=6"></script>
+    <div id="typedtext" class="csstext" style="display: none">
+      <!-- Removed the legacy typewriter greeting script -->
+    </div>
+    <!-- Customization controls -->
+    <div
+      id="customization"
+      style="
+        margin-top: 1rem;
+        text-align: center;
+        color: #fff;
+        font-size: 0.8rem;
+      "
+    >
+      <!-- Name input -->
+      <div style="margin-bottom: 0.5rem">
+        <label for="nameInput">Nhập tên&nbsp;</label>
+        <input
+          type="text"
+          id="nameInput"
+          placeholder="Tên người nhận"
+          style="padding: 0.2rem 0.4rem"
+        />
+      </div>
+      <!-- Image upload -->
+      <div style="margin-bottom: 0.5rem">
+        <label for="imgInput" style="display: none">Tải ảnh</label>
+        <!-- Hidden file input used to collect images. -->
+        <input
+          type="file"
+          id="imgInput"
+          accept="image/*"
+          multiple
+          style="display: none"
+        />
+        <!-- Button to trigger the file selector -->
+        <button
+          type="button"
+          id="addImageBtn"
+          style="
+            padding: 0.25rem 0.6rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #6bf0ff;
+            color: #111;
+            cursor: pointer;
+          "
+        >
+          Thêm ảnh
+        </button>
+        <!-- Button to clear all selected images -->
+        <button
+          type="button"
+          id="clearImagesBtn"
+          style="
+            padding: 0.25rem 0.6rem;
+            margin-left: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #ff7b7b;
+            color: #111;
+            cursor: pointer;
+          "
+        >
+          Xóa ảnh
+        </button>
+        <!-- Show small previews of the uploaded images with remove icons -->
+        <div
+          id="imgPreviewContainer"
+          style="
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+          "
+        ></div>
+      </div>
+
+      <!-- Audio selection -->
+      <div style="margin-bottom: 0.5rem">
+        <label for="audioSelect">Chọn nhạc&nbsp;</label>
+        <!-- Users can choose from a predefined list of songs or select "custom" to upload their own file. -->
+        <select id="audioSelect" style="padding: 0.2rem 0.4rem">
+          <option value="default" selected>Mặc định</option>
+          <option value="song1">Bài hát 1</option>
+          <option value="song2">Bài hát 2</option>
+          <option value="song3">Bài hát 3</option>
+          <option value="song4">Bài hát 4</option>
+          <option value="song5">Bài hát 5</option>
+          <option value="custom">Tải lên...</option>
+        </select>
+        <!-- Hidden custom audio input. Shown only when the user selects the "custom" option above. -->
+        <input
+          type="file"
+          id="customAudio"
+          accept="audio/*"
+          style="display: none; margin-top: 0.5rem"
+        />
+        <span
+          id="audioLabel"
+          style="
+            font-size: 0.7rem;
+            color: #bbb;
+            display: none;
+            margin-left: 0.5rem;
+          "
+        ></span>
+      </div>
+      <!-- Custom message -->
+      <div style="margin-bottom: 0.5rem">
+        <label for="messageInput">Lời chúc&nbsp;</label><br />
+        <!-- Allow up to five separate messages. Use newline to separate multiple lines. -->
+        <textarea
+          id="messageInput"
+          placeholder="Nhập tối đa 5 lời chúc (mỗi dòng 1 lời)"
+          rows="4"
+          cols="30"
+          style="padding: 0.4rem; resize: vertical"
+        ></textarea>
+      </div>
+      <!-- Theme selection -->
+      <div style="margin-bottom: 0.5rem">
+        <label for="themeInput">Chủ đề&nbsp;</label>
+        <select id="themeInput" style="padding: 0.2rem 0.4rem">
+          <option value="dark" selected>Đêm tối</option>
+          <option value="pastel">Pastel</option>
+          <option value="sunny">Nắng vàng</option>
+        </select>
+      </div>
+      <!-- Flower type selection -->
+      <div style="margin-bottom: 0.5rem">
+        <label for="flowerTypeInput">Loại hoa&nbsp;</label>
+        <select id="flowerTypeInput" style="padding: 0.2rem 0.4rem">
+          <option value="tulip" selected>Hoa Tulip</option>
+          <option value="rose">Hoa Hồng</option>
+          <option value="lily">Hoa Ly</option>
+        </select>
+      </div>
+      <!-- Share button -->
+      <div style="margin-bottom: 0.5rem">
+        <button
+          id="shareButton"
+          style="
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #39c6d6;
+            color: #111;
+            cursor: pointer;
+          "
+        >
+          Tạo liên kết chia sẻ
+        </button>
+        <p
+          id="shareStatus"
+          style="font-size: 0.75rem; margin-top: 0.3rem; display: none"
+        ></p>
+      </div>
+      <!-- Start button inside customization -->
+      <div style="margin-bottom: 0.5rem">
+        <button
+          id="startFromCustomize"
+          style="
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #6bf0ff;
+            color: #111;
+            cursor: pointer;
+          "
+        >
+          Xem hoa
+        </button>
+      </div>
+    </div>
+    <div class="description">
+      <!-- <p class="line-1 anim-typewriter"></p>
+        <p class="line-1 anim-typewriter"></p>
+        <p class="line-1 anim-typewriter"></p>
+        <p class="line-1 anim-typewriter"></p> -->
+    </div>
+    <div class="button">
+      <a href="flower.html" id="startButton">
+        <div id="flower" class="rotate"></div>
+
+        <script src="hoa.js"></script>
+      </a>
+    </div>
+  </body>
+</html>
