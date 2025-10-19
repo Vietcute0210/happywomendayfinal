@@ -92,25 +92,77 @@ document.addEventListener("DOMContentLoaded", () => {
   (function setupAudio() {
     const audioEl = document.getElementById("myAudio");
     if (!audioEl) return;
+
+    // Ensure mobile browsers allow inline playback without forcing fullscreen
+    audioEl.setAttribute("playsinline", "true");
+    audioEl.setAttribute("webkit-playsinline", "true");
+
     const sourceEl = audioEl.querySelector("source");
-    if (!sourceEl) return;
+    const srcTarget = sourceEl || audioEl;
     if (
       custom.audio &&
       typeof custom.audio === "string" &&
       custom.audio.startsWith("data")
     ) {
-      sourceEl.src = custom.audio;
+      srcTarget.src = custom.audio;
     } else if (custom.audio) {
-      sourceEl.src = custom.audio;
+      srcTarget.src = custom.audio;
     }
-    // Show controls and load audio
+
+    // Show controls and make sure users can start playback manually as a fallback
     audioEl.style.display = "block";
     audioEl.controls = true;
-    // Loop the audio so it repeats automatically
     audioEl.loop = true;
     audioEl.load();
-    // Autoplay if possible
-    audioEl.play().catch(() => {});
+
+    // Resume from the previous position when returning to this page
+    const resumeTime = () => {
+      if (
+        typeof custom.audioTime === "number" &&
+        !Number.isNaN(custom.audioTime)
+      ) {
+        try {
+          audioEl.currentTime = custom.audioTime;
+        } catch {
+          /* ignored */
+        }
+      }
+    };
+    if (audioEl.readyState >= 1) {
+      resumeTime();
+    } else {
+      audioEl.addEventListener("loadedmetadata", resumeTime, { once: true });
+    }
+
+    const unlockEvents = ["pointerdown", "touchstart", "click", "keydown"];
+    function removeUnlockListeners() {
+      unlockEvents.forEach((evt) => document.removeEventListener(evt, unlockAudio));
+    }
+    function unlockAudio() {
+      audioEl
+        .play()
+        .then(() => {
+          removeUnlockListeners();
+        })
+        .catch(() => {
+          // keep listeners so the next interaction can retry
+        });
+    }
+    const listenerOptions =
+      "ontouchstart" in window
+        ? { once: true, passive: true }
+        : { once: true };
+
+    audioEl
+      .play()
+      .then(() => {
+        removeUnlockListeners();
+      })
+      .catch(() => {
+        unlockEvents.forEach((evt) =>
+          document.addEventListener(evt, unlockAudio, listenerOptions)
+        );
+      });
   })();
 
   // Apply flower type: adjust colour schemes and clone flowers if necessary

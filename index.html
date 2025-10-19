@@ -114,7 +114,14 @@
         <span id="letter">R</span> -->
     </div>
     <!-- Background music for the landing page -->
-    <audio id="bgMusic" loop autoplay style="display: none">
+    <audio
+      id="bgMusic"
+      loop
+      autoplay
+      playsinline
+      webkit-playsinline
+      style="display: none"
+    >
       <source src="/sound/HERMOSA.mp3" type="audio/mpeg" />
     </audio>
     <!-- Toggle button to control background music -->
@@ -135,14 +142,41 @@
         user-select: none;
       "
     >
-      🔊
+      OFF
     </div>
     <script>
       (function () {
         const audio = document.getElementById("bgMusic");
         const toggleBtn = document.getElementById("musicToggle");
         function updateIcon() {
-          toggleBtn.textContent = audio.paused ? "🔇" : "🔊";
+          toggleBtn.textContent = audio.paused ? "OFF" : "ON";
+        }
+        const unlockEvents = ["pointerdown", "touchstart", "click", "keydown"];
+        function removeUnlockListeners() {
+          unlockEvents.forEach((evt) =>
+            document.removeEventListener(evt, unlockAudio)
+          );
+        }
+        function addUnlockListeners() {
+          removeUnlockListeners();
+          unlockEvents.forEach((evt) => {
+            const options =
+              evt === "touchstart"
+                ? { once: true, passive: true }
+                : { once: true };
+            document.addEventListener(evt, unlockAudio, options);
+          });
+        }
+        function unlockAudio() {
+          audio
+            .play()
+            .then(() => {
+              removeUnlockListeners();
+              updateIcon();
+            })
+            .catch(() => {
+              addUnlockListeners();
+            });
         }
         toggleBtn.addEventListener("click", function () {
           if (audio.paused) {
@@ -152,7 +186,18 @@
           }
           updateIcon();
         });
-        // initialize the icon based on autoplay state
+        audio.addEventListener("play", updateIcon);
+        audio.addEventListener("pause", updateIcon);
+        audio
+          .play()
+          .then(() => {
+            removeUnlockListeners();
+            updateIcon();
+          })
+          .catch(() => {
+            addUnlockListeners();
+            updateIcon();
+          });
         updateIcon();
       })();
     </script>
@@ -353,3 +398,4 @@
     </div>
   </body>
 </html>
+

@@ -37,6 +37,8 @@
         transform-style: preserve-3d;
         transform-origin: center center;
         transform: translate(-50%, -50%) rotateX(0deg) rotateY(0deg);
+        touch-action: none;
+        cursor: grab;
         /* pointer-events default (auto) allows pointerdown/drag */
       }
       .text-particle,
@@ -259,6 +261,8 @@
           lastY = 0;
         let rotX = 0,
           rotY = 0;
+        let activePointerId = null;
+
         function setRotation(dx, dy) {
           rotY += dx * 0.3; // adjust sensitivity as needed
           rotX -= dy * 0.3;
@@ -266,25 +270,58 @@
           rotX = Math.max(Math.min(rotX, 90), -90);
           rotatingContainer.style.transform = `translate(-50%, -50%) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
         }
+        function updateCursor(isActive) {
+          rotatingContainer.style.cursor = isActive ? "grabbing" : "grab";
+        }
+        function releasePointerCapture() {
+          if (activePointerId !== null) {
+            try {
+              rotatingContainer.releasePointerCapture(activePointerId);
+            } catch {
+              /* ignored */
+            }
+          }
+        }
+        function endInteraction() {
+          pointerDown = false;
+          updateCursor(false);
+          releasePointerCapture();
+          activePointerId = null;
+        }
         function onPointerDown(e) {
+          if (pointerDown) return;
           pointerDown = true;
+          activePointerId = e.pointerId;
           lastX = e.clientX;
           lastY = e.clientY;
+          updateCursor(true);
+          try {
+            rotatingContainer.setPointerCapture(activePointerId);
+          } catch {
+            /* ignored */
+          }
         }
         function onPointerMove(e) {
-          if (!pointerDown) return;
+          if (!pointerDown || e.pointerId !== activePointerId) return;
           const dx = e.clientX - lastX;
           const dy = e.clientY - lastY;
           setRotation(dx, dy);
           lastX = e.clientX;
           lastY = e.clientY;
         }
-        function onPointerUp() {
-          pointerDown = false;
+        function onPointerUp(e) {
+          if (e.pointerId !== activePointerId) return;
+          endInteraction();
+        }
+        function onPointerCancel(e) {
+          if (e.pointerId !== activePointerId) return;
+          endInteraction();
         }
         rotatingContainer.addEventListener("pointerdown", onPointerDown);
         window.addEventListener("pointermove", onPointerMove);
         window.addEventListener("pointerup", onPointerUp);
+        window.addEventListener("pointercancel", onPointerCancel);
+        rotatingContainer.addEventListener("lostpointercapture", endInteraction);
         // Prevent default dragging on images inside the container
         document.querySelectorAll("img").forEach((img) => {
           img.addEventListener("dragstart", (e) => e.preventDefault());
@@ -293,19 +330,90 @@
 
       // Setup music with default fallback and infinite loop
       function setupMusic() {
-        let audio;
-        if (custom.audio) {
-          audio = new Audio(custom.audio);
-        } else {
-          // Default audio file name – replace with your own file name (placed in same directory)
-          audio = new Audio("your_song.mp3");
-        }
-        // Resume from stored time if available
-        if (typeof custom.audioTime === "number" && !isNaN(custom.audioTime)) {
-          audio.currentTime = custom.audioTime;
-        }
+        const audio = document.createElement("audio");
+        audio.id = "messageAudio";
+        audio.controls = true;
         audio.loop = true;
-        audio.play().catch(() => {});
+        audio.autoplay = true;
+        audio.setAttribute("playsinline", "true");
+        audio.setAttribute("webkit-playsinline", "true");
+        audio.style.position = "fixed";
+        audio.style.bottom = "1rem";
+        audio.style.left = "1rem";
+        audio.style.zIndex = "10";
+        audio.style.opacity = "0.85";
+
+        if (custom.audio) {
+          audio.src = custom.audio;
+        } else {
+          // Default audio file name — replace with your own file name (placed in same directory)
+          audio.src = "your_song.mp3";
+        }
+        document.body.appendChild(audio);
+
+        const resumeFromSaved = () => {
+          if (
+            typeof custom.audioTime === "number" &&
+            !Number.isNaN(custom.audioTime)
+          ) {
+            try {
+              audio.currentTime = custom.audioTime;
+            } catch {
+              /* ignored */
+            }
+          }
+        };
+        if (audio.readyState >= 1) {
+          resumeFromSaved();
+        } else {
+          audio.addEventListener("loadedmetadata", resumeFromSaved, {
+            once: true,
+          });
+        }
+
+        const unlockEvents = ["pointerdown", "touchstart", "click", "keydown"];
+        function removeUnlock() {
+          unlockEvents.forEach((evt) =>
+            document.removeEventListener(evt, unlockHandler)
+          );
+        }
+        function unlockHandler() {
+          audio
+            .play()
+            .then(() => removeUnlock())
+            .catch(() => {
+              // keep listeners so the next interaction can retry
+            });
+        }
+
+        audio
+          .play()
+          .then(() => removeUnlock())
+          .catch(() => {
+            unlockEvents.forEach((evt) =>
+              document.addEventListener(evt, unlockHandler, {
+                once: true,
+                passive: evt === "touchstart",
+              })
+            );
+          });
+
+        function persistAudioTime() {
+          try {
+            custom.audioTime = audio.currentTime;
+            localStorage.setItem("customization", JSON.stringify(custom));
+            window.name = JSON.stringify(custom);
+          } catch {
+            /* ignored */
+          }
+        }
+        window.addEventListener("pagehide", persistAudioTime);
+        window.addEventListener("beforeunload", persistAudioTime);
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) {
+            persistAudioTime();
+          }
+        });
       }
 
       window.addEventListener("DOMContentLoaded", () => {
